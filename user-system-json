@@ -1,0 +1,134 @@
+import json
+import os
+import random
+
+USERS_FILE = "users_json"
+
+class JsonOperation:
+    def __init__(self, file):
+        self.filename = file + ".json"
+
+    def check_json(self):
+        if not os.path.exists(self.filename):
+            with open(self.filename, 'w') as f:
+                json.dump([], f, indent=4)
+        else:
+            with open(self.filename) as ff:
+                db = ff.read()
+            if db.strip() == "":
+                with open(self.filename, 'w') as fff:
+                    json.dump([], fff, indent=4)
+
+    def load_json(self):
+        self.check_json()
+        with open(self.filename) as f:
+            db = json.load(f)
+            return db
+
+    def write_2_json(self, info):
+        db = self.load_json()
+        db.append(info)
+        with open(self.filename, 'w') as f:
+            json.dump(db, f, indent=4)
+
+    def update_json(self, db):
+        with open(self.filename, 'w') as f:
+            json.dump(db, f, indent=4)
+
+
+class UserSystem:
+    def __init__(self, db_file):
+        self.db = JsonOperation(db_file)
+
+    def register(self):
+        while True:
+            username = input("Enter username: ").strip()
+            if username:
+                break
+            print("Username cannot be empty!")
+
+        while True:
+            password = input("Enter password: ").strip()
+            if password:
+                break
+            print("Password cannot be empty!")
+
+        countries = ["Canada", "USA", "Italy"]
+        print("Available countries:", countries)
+        Choose = input("Enter country: ").strip()
+        if Choose in countries:
+            country = Choose
+            print("Thanks")
+        else:
+            print("Invalid country, try again.")
+            return
+
+        user_id = random.randint(1000, 9999)
+
+        info = {
+            "Username": username,
+            "Password": password,
+            "Country": country,
+            "ID": user_id
+        }
+        self.db.write_2_json(info)
+        print("Registration successful!")
+
+    def login(self):
+        while True:
+            username = input("Enter your username: ").strip()
+            if username:
+                break
+            print("Username cannot be empty!")
+
+        db = self.db.load_json()
+
+        user = None
+        for u in db:
+            if u["Username"] == username:
+                user = u
+                break
+
+        if not user:
+            print("Username not found. Please register again.")
+            self.register()
+            return
+
+        attempts = 3
+        while attempts > 0:
+            password = input("Enter your password: ").strip()
+            if password == user["Password"]:
+                print("Login successful!")
+                return
+            else:
+                attempts -= 1
+                print(f"Wrong password. Attempts left: {attempts}")
+
+        print("Password deleted. Please create a new password.")
+        while True:
+            new_password = input("Enter new password: ").strip()
+            if new_password:
+                break
+            print("Password cannot be empty!")
+        user["Password"] = new_password
+
+        for i in range(len(db)):
+            if db[i]["Username"] == user["Username"]:
+                db[i] = user
+        self.db.update_json(db)
+        print("Password updated. You can now login again.")
+
+
+if __name__ == "__main__":
+    system = UserSystem(USERS_FILE)
+
+    while True:
+        choice = input("\nChoose action:1_Register 2_Login 3_Exit: ").strip()
+        if choice == "1":
+            system.register()
+        elif choice == "2":
+            system.login()
+        elif choice == "3":
+            break
+        else:
+            print("Invalid option. Try again.")
